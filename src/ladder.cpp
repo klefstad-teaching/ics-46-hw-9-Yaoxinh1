@@ -2,9 +2,9 @@
 #include <iostream>
 #include <fstream>
 #include <queue>
-#include <cctype>    
+#include <cctype>     
 #include <algorithm>  
-#include <cmath>      
+#include <cmath>
 using namespace std;
 
 
@@ -17,12 +17,9 @@ void error(string word1, string word2, string msg) {
 bool edit_distance_within(const string& str1, const string& str2, int d) {
     int n = (int)str1.size();
     int m = (int)str2.size();
-
-    // If length difference alone > d, can't be within distance d
     if (abs(n - m) > d) {
         return false;
     }
-
     vector<vector<int>> dp(n+1, vector<int>(m+1, 0));
     for (int i = 0; i <= n; i++) {
         dp[i][0] = i;
@@ -31,17 +28,16 @@ bool edit_distance_within(const string& str1, const string& str2, int d) {
         dp[0][j] = j;
     }
     for (int i = 1; i <= n; i++) {
-        int rowMin = dp[i][0]; 
+        int rowMin = dp[i][0];
         for (int j = 1; j <= m; j++) {
             int cost = (str1[i-1] == str2[j-1]) ? 0 : 1;
             dp[i][j] = min({
-                dp[i-1][j] + 1,     // deletion
-                dp[i][j-1] + 1,     // insertion
-                dp[i-1][j-1] + cost // substitution
+                dp[i-1][j] + 1,     
+                dp[i][j-1] + 1,     
+                dp[i-1][j-1] + cost 
             });
             rowMin = min(rowMin, dp[i][j]);
         }
-        // Early stop if this row already rose above d
         if (rowMin > d) {
             return false;
         }
@@ -64,12 +60,13 @@ void load_words(set<string> & word_list, const string& file_name) {
     string w;
     while (in >> w) {
         for (char &c : w) {
-            c = static_cast<char>(tolower(static_cast<unsigned char>(c)));
+            c = (char)tolower((unsigned char)c);
         }
         word_list.insert(w);
     }
     in.close();
 }
+
 
 static vector<string> get_neighbors(const string &word,
                                     const set<string> &word_list)
@@ -77,7 +74,7 @@ static vector<string> get_neighbors(const string &word,
     vector<string> neighbors;
     neighbors.reserve(64);
 
-    // 1) Substitution at each position (a->z), if it changes
+    // (1) Substitutions
     for (int i = 0; i < (int)word.size(); i++) {
         char original = word[i];
         for (char c = 'a'; c <= 'z'; c++) {
@@ -89,8 +86,7 @@ static vector<string> get_neighbors(const string &word,
             }
         }
     }
-
-    // 2) Insertion of one letter at any position
+    // (2) Insertions
     for (int i = 0; i <= (int)word.size(); i++) {
         for (char c = 'a'; c <= 'z'; c++) {
             string new_word = word.substr(0,i) + c + word.substr(i);
@@ -99,15 +95,16 @@ static vector<string> get_neighbors(const string &word,
             }
         }
     }
-
-    // 3) Deletion of one letter at each position
+    // (3) Deletions
     for (int i = 0; i < (int)word.size(); i++) {
         string new_word = word.substr(0, i) + word.substr(i+1);
         if (word_list.count(new_word)) {
             neighbors.push_back(new_word);
         }
     }
-
+    // Sort + unique so BFS always expands neighbors in alphabetical order
+    sort(neighbors.begin(), neighbors.end());
+    neighbors.erase(unique(neighbors.begin(), neighbors.end()), neighbors.end());
     return neighbors;
 }
 
@@ -116,43 +113,40 @@ vector<string> generate_word_ladder(const string& begin_word,
                                     const string& end_word,
                                     const set<string>& word_list)
 {
-    // Special case: single-word ladder if they match
+    // Fix #1: If identical, return single-word ladder immediately
     if (begin_word == end_word) {
-        // GTest expects a ladder of size 1 if they are equal
         return { begin_word };
     }
 
-    // BFS queue holds partial paths
+    // BFS queue of partial paths
     queue<vector<string>> paths;
     paths.push({ begin_word });
 
-    // visited words
+    // visited
     set<string> visited;
     visited.insert(begin_word);
 
-    // BFS
     while (!paths.empty()) {
         auto curr_path = paths.front();
         paths.pop();
-        const string &last_word = curr_path.back();
+        const string &last = curr_path.back();
 
-        // Generate neighbors for last_word
-        vector<string> nbrs = get_neighbors(last_word, word_list);
-        for (const auto &candidate : nbrs) {
-            // If not visited, enqueue a new path
+        // Generate neighbors in alphabetical order
+        auto nbrs = get_neighbors(last, word_list);
+        for (auto &candidate : nbrs) {
             if (!visited.count(candidate)) {
                 visited.insert(candidate);
+                // Extend the path
                 vector<string> new_path = curr_path;
                 new_path.push_back(candidate);
                 if (candidate == end_word) {
-                    return new_path; // Found the ladder!
+                    return new_path; // Found the ladder
                 }
                 paths.push(new_path);
             }
         }
     }
-
-
+    // No path found
     return {};
 }
 
@@ -163,7 +157,7 @@ void print_word_ladder(const vector<string>& ladder) {
         return;
     }
     cout << "Word ladder found: ";
-    for (const auto &w : ladder) {
+    for (const string &w : ladder) {
         cout << w << " ";
     }
     cout << "\n";
@@ -174,11 +168,11 @@ void verify_word_ladder() {
     set<string> dict;
     load_words(dict, "words.txt");
 
-    // "apple" -> "apple" should yield { "apple" }
-    auto ladder1 = generate_word_ladder("apple", "apple", dict);
-    print_word_ladder(ladder1);
+    // #1 "were" -> "were" should return a ladder of size=1: ["were"]
+    auto ladderA = generate_word_ladder("were", "were", dict);
+    print_word_ladder(ladderA);
 
-    // "cat" -> "dog" example
-    auto ladder2 = generate_word_ladder("cat", "dog", dict);
-    print_word_ladder(ladder2);
+    // #2 "awake" -> "sleep" might follow the path from the test 
+    auto ladderB = generate_word_ladder("awake", "sleep", dict);
+    print_word_ladder(ladderB);
 }
