@@ -113,9 +113,9 @@ vector<string> generate_word_ladder(const string& begin_word,
                                     const string& end_word,
                                     const set<string>& word_list)
 {
-    // Fix #1: If identical, return single-word ladder immediately
+   
     if (begin_word == end_word) {
-        return { begin_word };
+        return {};
     }
 
     // BFS queue of partial paths
