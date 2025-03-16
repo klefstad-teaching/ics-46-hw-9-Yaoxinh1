@@ -1,7 +1,9 @@
 #include "dijkstras.h"
 #include <queue>
 #include <iostream>
+#include <algorithm> 
 
+using namespace std;
 
 vector<int> dijkstra_shortest_path(const Graph& G, int source, vector<int>& previous)
 {
@@ -9,13 +11,13 @@ vector<int> dijkstra_shortest_path(const Graph& G, int source, vector<int>& prev
     vector<int> distance(n, INF);
     vector<bool> visited(n, false);
 
-
-    using DistVertex = pair<int,int>;
-    priority_queue<DistVertex, vector<DistVertex>, greater<DistVertex>> pq;
-
     
+    using DistVert = pair<int,int>;
+    priority_queue<DistVert, vector<DistVert>, greater<DistVert>> pq;
+
     distance[source] = 0;
-    previous.assign(n, -1); 
+    previous.assign(n, -1);
+
     pq.push({0, source});
 
     while (!pq.empty()) {
@@ -26,12 +28,11 @@ vector<int> dijkstra_shortest_path(const Graph& G, int source, vector<int>& prev
         visited[u] = true;
 
         
-        for (auto& edge : G[u]) {
+        for (auto &edge : G[u]) {
             int v = edge.dst;
-            int weight = edge.weight;
-
-            if (!visited[v] && distance[u] != INF && distance[u] + weight < distance[v]) {
-                distance[v] = distance[u] + weight;
+            int w = edge.weight;
+            if (!visited[v] && distance[u] != INF && distance[u] + w < distance[v]) {
+                distance[v] = distance[u] + w;
                 previous[v] = u;
                 pq.push({distance[v], v});
             }
@@ -41,21 +42,21 @@ vector<int> dijkstra_shortest_path(const Graph& G, int source, vector<int>& prev
     return distance;
 }
 
-
-vector<int> extract_shortest_path(const vector<int>& distances, const vector<int>& previous, int destination)
+vector<int> extract_shortest_path(const vector<int>& distances,
+                                  const vector<int>& previous,
+                                  int destination)
 {
     vector<int> path;
-    
-    if (destination < 0 || destination >= (int)distances.size() || distances[destination] == INF) {
+    if (destination < 0 || destination >= (int)distances.size())
+        return path;
+    if (distances[destination] == INF) {
        
         return path;
     }
-
    
     for (int v = destination; v != -1; v = previous[v]) {
         path.push_back(v);
     }
-  
     reverse(path.begin(), path.end());
     return path;
 }
@@ -64,12 +65,13 @@ vector<int> extract_shortest_path(const vector<int>& distances, const vector<int
 void print_path(const vector<int>& v, int total)
 {
     if (v.empty()) {
-        cout << "No path found\n";
+       
+        cout << "\nTotal cost is " << total << "\n";
         return;
     }
-    for (size_t i = 0; i < v.size(); i++) {
-        cout << v[i];
-        if (i + 1 < v.size()) cout << " ";
+
+    for (int vertex : v) {
+        cout << vertex << " ";
     }
-    cout << "\nTotal cost is " << total << "\n\n";
+    cout << "\nTotal cost is " << total << "\n";
 }
