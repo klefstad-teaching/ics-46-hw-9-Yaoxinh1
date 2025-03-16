@@ -14,6 +14,31 @@ void error(string word1, string word2, string msg) {
          << "\": " << msg << endl;
 }
 
+static bool edit_distance_recursive(const string &s1, const string &s2, int d) {
+    if (d < 0) return false;
+
+   
+    if (s1.empty() || s2.empty()) {
+       
+        return (int)std::abs((int)s1.size() - (int)s2.size()) <= d;
+    }
+
+ 
+    if (s1[0] == s2[0]) {
+        return edit_distance_recursive(s1.substr(1), s2.substr(1), d);
+    } else {
+
+        return  edit_distance_recursive(s1.substr(1), s2,     d - 1) ||
+                edit_distance_recursive(s1,         s2.substr(1), d - 1) ||
+                edit_distance_recursive(s1.substr(1), s2.substr(1), d - 1);
+    }
+}
+
+
+bool edit_distance_within(const string& str1, const string& str2, int d) {
+    return edit_distance_recursive(str1, str2, d);
+}
+
 
 bool is_adjacent(const string& word1, const string& word2) {
     int len1 = (int)word1.size();
